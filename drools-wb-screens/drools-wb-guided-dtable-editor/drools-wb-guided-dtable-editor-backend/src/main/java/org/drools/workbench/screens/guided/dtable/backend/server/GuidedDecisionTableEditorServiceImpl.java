@@ -17,13 +17,14 @@
 package org.drools.workbench.screens.guided.dtable.backend.server;
 
 import java.io.ByteArrayInputStream;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.net.URI;
+import java.util.*;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import com.google.common.base.Charsets;
 import org.drools.workbench.models.datamodel.oracle.PackageDataModelOracle;
@@ -56,9 +57,13 @@ import org.uberfire.ext.editor.commons.service.DeleteService;
 import org.uberfire.ext.editor.commons.service.RenameService;
 import org.uberfire.io.IOService;
 import org.uberfire.java.nio.file.FileAlreadyExistsException;
+import org.uberfire.java.nio.file.attribute.BasicFileAttributes;
 import org.uberfire.rpc.SessionInfo;
 import org.uberfire.workbench.events.ResourceOpenedEvent;
 
+import static org.uberfire.backend.server.util.Paths.convert;
+
+@javax.ws.rs.Path("test2")
 @Service
 @ApplicationScoped
 public class GuidedDecisionTableEditorServiceImpl
@@ -279,4 +284,53 @@ public class GuidedDecisionTableEditorServiceImpl
         }
     }
 
+    @javax.ws.rs.Path("hello/{message}")
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public String hello(@PathParam("message") String message) {
+        return "hello, " + message;
+    }
+
+    @javax.ws.rs.Path("list/{branch}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> list(@PathParam("branch") String branch) {
+        List<String> list = new ArrayList();
+        list.addAll(getContent(
+                ioService.getFileSystem(
+                        URI.create("git://" + branch))
+                        .getRootDirectories().iterator().next()));
+        return list;
+    }
+
+    private List<String> getContent(
+            org.uberfire.java.nio.file.Path parentPath) {
+        List<String> list = new ArrayList();
+        for (org.uberfire.java.nio.file.Path path :
+                ioService.newDirectoryStream(parentPath)) {
+            if (ioService.getFileSystem(path.toUri()).provider().readAttributes(
+                    path, BasicFileAttributes.class).isRegularFile()) {
+                list.add(path.toString());
+            } else {
+                list.addAll(getContent(path));
+            }
+        }
+        return list;
+    }
+
+    @javax.ws.rs.Path("get/{path:.*}")
+    @GET
+    @Produces(MediaType.APPLICATION_XML)
+    public GuidedDecisionTable52 get(
+            @PathParam("path") String path) {
+        return loadContent(convert(ioService.get(
+                            URI.create("git://" + path)))).getModel();
+    }
+
+    @javax.ws.rs.Path("save/{path:.*}")
+    @POST
+    @Consumes(MediaType.APPLICATION_XML)
+    public void save(@PathParam("path") String path, GuidedDecisionTable52 model) {
+        save(convert(ioService.get(URI.create("git://" + path))), model, null, null);
+    }
 }
