@@ -63,7 +63,7 @@ import org.uberfire.workbench.events.ResourceOpenedEvent;
 
 import static org.uberfire.backend.server.util.Paths.convert;
 
-@javax.ws.rs.Path("test2")
+@javax.ws.rs.Path("gdst")
 @Service
 @ApplicationScoped
 public class GuidedDecisionTableEditorServiceImpl
@@ -318,7 +318,7 @@ public class GuidedDecisionTableEditorServiceImpl
         return list;
     }
 
-    @javax.ws.rs.Path("get/{path:.*}")
+    @javax.ws.rs.Path("{path:.*}")
     @GET
     @Produces(MediaType.APPLICATION_XML)
     public GuidedDecisionTable52 get(
@@ -327,8 +327,8 @@ public class GuidedDecisionTableEditorServiceImpl
                             URI.create("git://" + path)))).getModel();
     }
 
-    @javax.ws.rs.Path("save/{path:.*}")
-    @POST
+    @javax.ws.rs.Path("{path:.*}")
+    @PUT
     @Consumes(MediaType.APPLICATION_XML)
     public void save(@PathParam("path") String path, GuidedDecisionTable52 model) {
         save(convert(ioService.get(URI.create("git://" + path))), model, null, null);
