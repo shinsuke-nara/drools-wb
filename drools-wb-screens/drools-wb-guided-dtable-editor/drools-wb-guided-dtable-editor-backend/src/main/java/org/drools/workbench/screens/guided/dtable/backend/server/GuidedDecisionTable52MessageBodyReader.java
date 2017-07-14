@@ -17,7 +17,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 @Provider
-@Produces(MediaType.APPLICATION_XML)
+@Produces(MediaType.APPLICATION_JSON)
 public class GuidedDecisionTable52MessageBodyReader implements MessageBodyReader<GuidedDecisionTable52> {
     @Override
     public boolean isReadable(
@@ -48,7 +48,7 @@ public class GuidedDecisionTable52MessageBodyReader implements MessageBodyReader
         {
             buffer.append(line);
         }
-        return GuidedDTXMLPersistence.getInstance().unmarshal(
+        return GuidedDTJSONPersistence.getInstance().unmarshal(
             buffer.toString());
     }
 }

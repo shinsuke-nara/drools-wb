@@ -16,7 +16,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 @Provider
-@Produces(MediaType.APPLICATION_XML)
+@Produces(MediaType.APPLICATION_JSON)
 public class GuidedDecisionTable52MessageBodyWriter implements MessageBodyWriter<GuidedDecisionTable52> {
     @Override
     public boolean isWriteable(
@@ -51,8 +51,8 @@ public class GuidedDecisionTable52MessageBodyWriter implements MessageBodyWriter
         throws IOException, WebApplicationException
     {
         OutputStreamWriter writer = new OutputStreamWriter(outputStream);
-        writer.write(
-            GuidedDTXMLPersistence.getInstance().marshal(guidedDecisionTable52));
+        writer.write(GuidedDTJSONPersistence.getInstance().marshal(
+                    guidedDecisionTable52));
         writer.flush();
     }
 }
