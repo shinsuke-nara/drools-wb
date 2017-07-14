@@ -320,7 +320,7 @@ public class GuidedDecisionTableEditorServiceImpl
 
     @javax.ws.rs.Path("{path:.*}")
     @GET
-    @Produces(MediaType.APPLICATION_XML)
+    @Produces(MediaType.APPLICATION_JSON)
     public GuidedDecisionTable52 get(
             @PathParam("path") String path) {
         return loadContent(convert(ioService.get(
@@ -329,7 +329,7 @@ public class GuidedDecisionTableEditorServiceImpl
 
     @javax.ws.rs.Path("{path:.*}")
     @PUT
-    @Consumes(MediaType.APPLICATION_XML)
+    @Consumes(MediaType.APPLICATION_JSON)
     public void save(@PathParam("path") String path, GuidedDecisionTable52 model) {
         save(convert(ioService.get(URI.create("git://" + path))), model, null, null);
     }
