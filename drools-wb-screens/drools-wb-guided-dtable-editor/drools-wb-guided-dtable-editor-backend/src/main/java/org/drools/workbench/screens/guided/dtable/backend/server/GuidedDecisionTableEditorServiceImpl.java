@@ -63,6 +63,8 @@ import org.uberfire.workbench.events.ResourceOpenedEvent;
 
 import static org.uberfire.backend.server.util.Paths.convert;
 
+import org.uberfire.java.nio.base.options.CommentedOption;
+
 @javax.ws.rs.Path("gdst")
 @Service
 @ApplicationScoped
@@ -333,4 +335,33 @@ public class GuidedDecisionTableEditorServiceImpl
     public void save(@PathParam("path") String path, GuidedDecisionTable52 model) {
         save(convert(ioService.get(URI.create("git://" + path))), model, null, null);
     }
+
+    @javax.ws.rs.Path("{path:.*}")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void save( @PathParam("path") String path,
+            final GDSTWithComment data)
+    {
+        try {
+            GuidedDecisionTable52 model = data.model;
+            final Path resource =
+                    convert(ioService.get(URI.create("git://" + path)));
+            final Package pkg = projectService.resolvePackage( resource );
+            final String packageName = ( pkg == null ? null : pkg.getPackageName() );
+            model.setPackageName( packageName );
+
+            Metadata currentMetadata = metadataService.getMetadata( resource );
+            ioService.write( Paths.convert( resource ),
+                             GuidedDTXMLPersistence.getInstance().marshal( model ),
+                             metadataService.setUpAttributes( resource,
+                                                              null ),
+                            new CommentedOption(data.author, data.comment));
+
+            fireMetadataSocialEvents( resource, currentMetadata, null );
+
+        } catch ( Exception e ) {
+            throw ExceptionUtilities.handleException( e );
+        }
+    }
+
 }
