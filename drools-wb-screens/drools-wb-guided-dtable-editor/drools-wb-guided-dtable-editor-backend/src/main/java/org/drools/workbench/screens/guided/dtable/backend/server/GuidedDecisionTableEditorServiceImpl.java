@@ -16,6 +16,8 @@
 
 package org.drools.workbench.screens.guided.dtable.backend.server;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,6 +25,8 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 
 import org.drools.workbench.models.datamodel.oracle.PackageDataModelOracle;
 import org.drools.workbench.models.datamodel.workitems.PortableWorkDefinition;
@@ -44,6 +48,7 @@ import org.guvnor.common.services.shared.metadata.model.Metadata;
 import org.guvnor.common.services.shared.metadata.model.Overview;
 import org.guvnor.common.services.shared.validation.model.ValidationMessage;
 import org.jboss.errai.bus.server.annotations.Service;
+import org.jboss.errai.security.shared.api.identity.UserImpl;
 import org.kie.workbench.common.services.backend.service.KieService;
 import org.kie.workbench.common.services.datamodel.backend.server.DataModelOracleUtilities;
 import org.kie.workbench.common.services.datamodel.backend.server.service.DataModelService;
@@ -57,12 +62,15 @@ import org.uberfire.ext.editor.commons.service.CopyService;
 import org.uberfire.ext.editor.commons.service.DeleteService;
 import org.uberfire.ext.editor.commons.service.RenameService;
 import org.uberfire.io.IOService;
+import org.uberfire.java.nio.base.options.CommentedOption;
 import org.uberfire.java.nio.base.version.VersionRecord;
 import org.uberfire.java.nio.file.FileAlreadyExistsException;
 import org.uberfire.java.nio.file.Files;
+import org.uberfire.java.nio.file.attribute.BasicFileAttributes;
 import org.uberfire.rpc.SessionInfo;
 import org.uberfire.workbench.events.ResourceOpenedEvent;
 
+@javax.ws.rs.Path("gdst")
 @Service
 @ApplicationScoped
 public class GuidedDecisionTableEditorServiceImpl
@@ -367,6 +375,69 @@ public class GuidedDecisionTableEditorServiceImpl
         } catch ( Exception e ) {
             throw ExceptionUtilities.handleException( e );
         }
+    }
+
+    @javax.ws.rs.Path("{path:.*}")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void save( @PathParam("path") final String path,
+                      final GDSTWithComment data)
+    {
+        try {
+            GuidedDecisionTable52 model = data.model;
+            final Path resource = Paths.convert( ioService.get( URI.create( "git://" + path ) ) );
+            final Package pkg = projectService.resolvePackage( resource );
+            final String packageName = ( pkg == null ? null : pkg.getPackageName() );
+            model.setPackageName( packageName );
+
+            Metadata currentMetadata = metadataService.getMetadata( resource );
+            ioService.write( Paths.convert( resource ),
+                             GuidedDTXMLPersistence.getInstance().marshal( model ),
+                             metadataService.setUpAttributes( resource,
+                                                              null ),
+                             new CommentedOption( data.author, data.comment ) );
+
+            fireMetadataSocialEvents( resource, currentMetadata, null );
+
+        } catch ( Exception e ) {
+            throw ExceptionUtilities.handleException( e );
+        }
+    }
+
+    @javax.ws.rs.Path("list/{branch}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<String> list(@PathParam("branch") String branch) {
+        List<String> list = new ArrayList();
+        list.addAll(getFileNames(
+                ioService.getFileSystem(
+                        URI.create("git://" + branch))
+                        .getRootDirectories().iterator().next()));
+        return list;
+    }
+
+    private List<String> getFileNames(
+            org.uberfire.java.nio.file.Path parentPath) {
+        List<String> list = new ArrayList();
+        for (org.uberfire.java.nio.file.Path path :
+                ioService.newDirectoryStream(parentPath)) {
+            if (ioService.getFileSystem(path.toUri()).provider().readAttributes(
+                    path, BasicFileAttributes.class).isRegularFile()) {
+                list.add(path.toString());
+            } else {
+                list.addAll(getFileNames(path));
+            }
+        }
+        return list;
+    }
+
+    @javax.ws.rs.Path("{path:.*}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public GuidedDecisionTable52 get(
+            @PathParam("path") String path) {
+        return loadContent(Paths.convert(ioService.get(
+                            URI.create("git://" + path)))).getModel();
     }
 
 }

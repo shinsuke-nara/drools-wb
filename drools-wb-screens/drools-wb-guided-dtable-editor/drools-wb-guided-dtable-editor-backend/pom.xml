@@ -141,6 +141,12 @@
       <artifactId>uberfire-commons-editor-backend</artifactId>
     </dependency>
 
+    <!-- For REST API. -->
+    <dependency>
+      <groupId>org.codehaus.jettison</groupId>
+      <artifactId>jettison</artifactId>
+    </dependency>
+
     <!-- Test dependencies -->
     <dependency>
       <groupId>org.uberfire</groupId>
